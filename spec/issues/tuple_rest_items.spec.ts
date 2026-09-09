@@ -306,4 +306,278 @@ describe("tuple schemas with a schema for remaining items", () => {
     validate!(["a", "b", "no"]).should.equal(false)
     stillRejectsOpenEnded()
   })
+
+  it("allows a remaining-items schema when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "string"}],
+      minItems: 0,
+      additionalItems: {type: "number"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!([]).should.equal(true)
+    validate!(["h", 1, 2]).should.equal(true)
+    validate!(["h", "x"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows a remaining-items schema when minItems is smaller than the prefix", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "string"}, {type: "number"}],
+      minItems: 1,
+      additionalItems: {type: "boolean"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!(["only"]).should.equal(true)
+    validate!(["ok", 1, false]).should.equal(true)
+    validate!(["ok", 1, "no"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows a remaining-items schema when minItems is omitted", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "boolean"}],
+      additionalItems: {type: "string"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!([true, "a"]).should.equal(true)
+    validate!([true, 1]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows a remaining-items schema together with a maxItems cap", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "string"}, {type: "string"}],
+      minItems: 0,
+      maxItems: 5,
+      additionalItems: {type: "number"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!(["a", "b", 1, 2]).should.equal(true)
+    validate!(["a", "b", "z"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows remaining enum items when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "string"}],
+      minItems: 0,
+      additionalItems: {enum: ["n", "s"]},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!([]).should.equal(true)
+    validate!(["h", "n"]).should.equal(true)
+    validate!(["h", "x"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows remaining items nested under properties when minItems is 0", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        row: {
+          type: "array",
+          items: [{type: "string"}],
+          minItems: 0,
+          additionalItems: {type: "integer"},
+        },
+      },
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!({row: []}).should.equal(true)
+    validate!({row: ["h", 2]}).should.equal(true)
+    validate!({row: ["h", "x"]}).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2019-09 remaining items when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "boolean"}],
+      minItems: 0,
+      additionalItems: {type: "string"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2019.compile(schema)
+    })
+    validate!([true, "ok"]).should.equal(true)
+    validate!([true, 1]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2019-09 remaining objects when minItems is omitted", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "string"}],
+      additionalItems: {type: "object", minProperties: 1},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2019.compile(schema)
+    })
+    validate!(["h", {a: 1}]).should.equal(true)
+    validate!(["h", {}]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 remaining items when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      prefixItems: [{type: "string"}],
+      minItems: 0,
+      items: {type: "number"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2020.compile(schema)
+    })
+    validate!([]).should.equal(true)
+    validate!(["h", 1]).should.equal(true)
+    validate!(["h", "x"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 remaining items when minItems is smaller than the prefix", () => {
+    const schema = {
+      type: "array",
+      prefixItems: [{type: "string"}, {type: "number"}],
+      minItems: 1,
+      items: {type: "boolean"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2020.compile(schema)
+    })
+    validate!(["only"]).should.equal(true)
+    validate!(["ok", 1, false]).should.equal(true)
+    validate!(["ok", 1, "no"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 remaining items when minItems is omitted", () => {
+    const schema = {
+      type: "array",
+      prefixItems: [{type: "boolean"}],
+      items: {type: "string"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2020.compile(schema)
+    })
+    validate!([true, "a"]).should.equal(true)
+    validate!([true, 1]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 empty remaining schema when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      prefixItems: [{type: "string"}, {type: "string"}],
+      minItems: 0,
+      items: {},
+    }
+    should.not.throw(() => {
+      ajv2020.compile(schema)
+    })
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 remaining const items when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      prefixItems: [{type: "string"}],
+      minItems: 0,
+      items: {const: "tail"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2020.compile(schema)
+    })
+    validate!(["h", "tail"]).should.equal(true)
+    validate!(["h", "no"]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows draft-2020-12 remaining items nested in properties when minItems is 0", () => {
+    const schema = {
+      type: "object",
+      properties: {
+        path: {
+          type: "array",
+          prefixItems: [{type: "string"}],
+          minItems: 0,
+          items: {type: "string", minLength: 1},
+        },
+      },
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv2020.compile(schema)
+    })
+    validate!({path: []}).should.equal(true)
+    validate!({path: ["root", "a"]}).should.equal(true)
+    validate!({path: ["root", ""]}).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows remaining items under patternProperties when minItems is smaller than the prefix", () => {
+    const schema = {
+      type: "object",
+      patternProperties: {
+        "^col-": {
+          type: "array",
+          items: [{type: "string"}, {type: "string"}],
+          minItems: 1,
+          additionalItems: {type: "integer"},
+        },
+      },
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!({"col-a": ["hdr"]}).should.equal(true)
+    validate!({"col-a": ["a", "b", 3]}).should.equal(true)
+    validate!({"col-a": ["a", "b", "x"]}).should.equal(false)
+    stillRejectsOpenEnded()
+  })
+
+  it("allows a three-item prefix with remaining strings when minItems is 0", () => {
+    const schema = {
+      type: "array",
+      items: [{type: "number"}, {type: "number"}, {type: "number"}],
+      minItems: 0,
+      additionalItems: {type: "string"},
+    }
+    let validate: (data: unknown) => boolean
+    should.not.throw(() => {
+      validate = ajv.compile(schema)
+    })
+    validate!([1, 2, 3, "x"]).should.equal(true)
+    validate!([1, 2, 3, 4]).should.equal(false)
+    stillRejectsOpenEnded()
+  })
 })
