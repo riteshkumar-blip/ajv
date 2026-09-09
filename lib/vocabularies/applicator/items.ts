@@ -48,7 +48,11 @@ export function validateTuple(
   function checkStrictTuple(sch: AnySchemaObject): void {
     const {opts, errSchemaPath} = it
     const l = schArr.length
-    const fullTuple = l === sch.minItems && (l === sch.maxItems || sch[extraItems] === false)
+    const extra = sch[extraItems]
+    const extraSchema =
+      extra !== undefined && extra !== true && extra !== false && typeof extra === "object"
+    const fullTuple =
+      l === sch.minItems && (l === sch.maxItems || extra === false || extraSchema)
     if (opts.strictTuples && !fullTuple) {
       const msg = `"${keyword}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`
       checkStrictMode(it, msg, opts.strictTuples)
