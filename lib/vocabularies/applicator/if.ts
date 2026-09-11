@@ -62,7 +62,7 @@ const def: CodeKeywordDefinition = {
 
     function validateClause(keyword: string, ifClause?: Name): () => void {
       return () => {
-        const schCxt = cxt.subschema({keyword}, schValid)
+        const schCxt = cxt.subschema({keyword, compositeRule: true}, schValid)
         gen.assign(valid, schValid)
         cxt.mergeValidEvaluated(schCxt, valid)
         if (ifClause) gen.assign(ifClause, _`${keyword}`)

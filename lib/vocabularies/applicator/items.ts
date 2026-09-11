@@ -45,17 +45,23 @@ export function validateTuple(
     cxt.ok(valid)
   })
 
+  function isRestSchema(v: unknown): boolean {
+    return v !== undefined && v !== true && v !== false && typeof v === "object"
+  }
+
   function checkStrictTuple(sch: AnySchemaObject): void {
     const {opts, errSchemaPath} = it
     const l = schArr.length
     const extra = sch[extraItems]
-    const extraSchema =
-      extra !== undefined && extra !== true && extra !== false && typeof extra === "object"
+    const uneval = sch.unevaluatedItems
+    const extraSchema = isRestSchema(extra) || isRestSchema(uneval)
+    const extraClosed = extra === false || uneval === false
+    const minOk = typeof sch.minItems !== "number" || sch.minItems <= l
     const lengthLocked = l === sch.minItems && l === sch.maxItems
-    const prefixClosed = l === sch.minItems && extra === false
-    const restSchema =
-      extraSchema && (typeof sch.minItems !== "number" || sch.minItems <= l)
-    const fullTuple = lengthLocked || prefixClosed || restSchema
+    const prefixClosed = extraClosed && typeof sch.minItems === "number" && sch.minItems <= l
+    const restSchema = extraSchema && minOk
+    const composedClosed = Boolean(it.compositeRule) && extraClosed
+    const fullTuple = lengthLocked || prefixClosed || restSchema || composedClosed
     if (opts.strictTuples && !fullTuple) {
       const msg = `"${keyword}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`
       checkStrictMode(it, msg, opts.strictTuples)
